@@ -1,0 +1,16 @@
+The Instruction Fetch, Issue, Mem, ALU, Writeback, and Cache will all be in separate files 
+
+The only global we'll need so far are the Registers and possbly Cache and Control
+
+The buffers are going to be arays of intruction structs that vary in size depending on the buffer
+
+-Instruction Fetch: Input is data from Cache(binary data) and Output will put parsed binary into pre-issue buffer, but will have filtered for Branch, NOP, and Break instructions.
+-Issue: Input is parsed binary in pre-issue buffer and Output is parsed binary, but specifiicaly for the pre-ALU and pre-Mem buffers. 
+-ALU: Input is parsed binary and the Output is sent to the post-ALU buffer once all non-memeory instructions are carried out
+-Mem: Input is parsed instruction struct from mem queue and Output is specifically for load instructions only and is raw data from the cache and the register #
+-Writeback: Input is from Post-ALU and post-Mem and output is register data
+
+Every cycle will output each buffer, all registers, all cache blocks, and memory
+
+Once all instructions are processed and complteted, flush Cache
+Output flushed cache 
