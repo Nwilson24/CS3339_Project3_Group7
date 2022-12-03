@@ -12,5 +12,5 @@ The buffers are going to be arays of intruction structs that vary in size depend
 
 Every cycle will output each buffer, all registers, all cache blocks, and memory
 
-Once all instructions are processed and complteted, flush Cache
+Once all instructions are processed and completed, flush Cache
 Output flushed cache 
