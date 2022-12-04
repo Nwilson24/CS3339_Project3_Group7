@@ -10,16 +10,12 @@ func WriteBack(memPI *Instruction, aluPI *Instruction) { // destination register
 	// need to check if either buffer is empty
 	empty := Instruction{}
 
-	if *memPI == empty {
-		return
-	} else {
+	if *memPI != empty {
 		Registers[memPI.rd] = memPI.memResult
 		*memPI = empty
 	}
 
-	if *aluPI == empty {
-		return
-	} else {
+	if *aluPI != empty {
 		Registers[aluPI.rd] = aluPI.aluResult
 		*aluPI = empty
 	}

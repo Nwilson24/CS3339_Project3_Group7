@@ -32,7 +32,7 @@ func CacheSetup() {
 func CacheRead(address int) (bool, int) {
 	//take address and return true, [value] if hit
 	//if miss, return false, 0 and bring it into cache
-	i := (address / 4) % 4
+	i := (address / 8) % 4
 	for j := 0; j < 2; j++ {
 		if cache[i][j].memAddress == address || cache[i][j].memAddress == (address-4) { //remember blocks are 2 words wide
 			cache[i][j].LRU = 1
@@ -57,7 +57,7 @@ func CacheRead(address int) (bool, int) {
 
 func CacheWrite(address int, value int) bool {
 	// search cache for value; return if it finds a hit
-	i := (address / 4) % 4
+	i := (address / 8) % 4
 	for j := 0; j < 2; j++ {
 		if cache[i][j].memAddress == address || cache[i][j].memAddress == (address-4) { //remember blocks are 2 words wide
 			//set flags and write
@@ -84,7 +84,7 @@ func CacheWrite(address int, value int) bool {
 }
 
 func MemFetch(address int) { //**************************************************** still need to set tags!!
-	set := (address / 4) % 4
+	set := (address / 8) % 4
 	var t int
 	//check and reset LRU values
 	if cache[set][0].LRU == 0 {
@@ -92,8 +92,8 @@ func MemFetch(address int) { //*************************************************
 		cache[set][1].LRU = 0
 		t = 0
 	} else {
-		cache[set][1].LRU = 1
 		cache[set][0].LRU = 0
+		cache[set][1].LRU = 1
 		t = 1
 	}
 	//write back to mem if dirty
@@ -123,11 +123,29 @@ func CacheToString() string {
 	for i := 0; i < 4; i++ {
 		s += fmt.Sprintf("Set %v: LRU = %v\n", i, cache[i][1].LRU)
 		//format data
-		word1 := strconv.FormatInt(int64(cache[i][0].word1), 2)
-		word2 := strconv.FormatInt(int64(cache[i][0].word2), 2)
+		word1 := ""
+		word2 := ""
+		if cache[i][0].word1 < 0 {
+			word1 = strconv.FormatUint(uint64(cache[i][0].word1), 2)[32:]
+		} else {
+			word1 = strconv.FormatUint(uint64(cache[i][0].word1), 2)
+		}
+		if cache[i][0].word2 < 0 {
+			word2 = strconv.FormatUint(uint64(cache[i][0].word2), 2)[32:]
+		} else {
+			word2 = strconv.FormatUint(uint64(cache[i][0].word2), 2)
+		}
 		s += fmt.Sprintf("Entry 0:[(%v, %v, %v)<%v,%v>]\n", cache[i][0].valid, cache[i][0].dirty, cache[i][0].tag, word1, word2)
-		word1 = strconv.FormatInt(int64(cache[i][1].word1), 2)
-		word2 = strconv.FormatInt(int64(cache[i][1].word2), 2)
+		if cache[i][1].word1 < 0 {
+			word1 = strconv.FormatUint(uint64(cache[i][1].word1), 2)[33:]
+		} else {
+			word1 = strconv.FormatUint(uint64(cache[i][1].word1), 2)
+		}
+		if cache[i][1].word2 < 0 {
+			word2 = strconv.FormatUint(uint64(cache[i][1].word2), 2)[33:]
+		} else {
+			word2 = strconv.FormatUint(uint64(cache[i][1].word2), 2)
+		}
 		s += fmt.Sprintf("Entry 1:[(%v, %v, %v)<%v,%v>]\n", cache[i][1].valid, cache[i][1].dirty, cache[i][1].tag, word1, word2)
 	}
 	return s

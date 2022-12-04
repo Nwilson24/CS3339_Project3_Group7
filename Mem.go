@@ -4,6 +4,9 @@ import "fmt"
 
 func MEM(preBuffer *[2]Instruction, postBuffer *Instruction) { // calculates address ONLY
 	empty := Instruction{}
+	if preBuffer[0] == empty {
+		return
+	}
 	pI := preBuffer[0]
 	var hit = false
 
@@ -13,6 +16,7 @@ func MEM(preBuffer *[2]Instruction, postBuffer *Instruction) { // calculates add
 		if !hit {
 			return
 		}
+		preBuffer[0] = empty
 		if preBuffer[1] != empty && preBuffer[0] == empty {
 			preBuffer[0] = preBuffer[1]
 			preBuffer[1] = empty
@@ -23,11 +27,12 @@ func MEM(preBuffer *[2]Instruction, postBuffer *Instruction) { // calculates add
 		if !hit {
 			return
 		}
+		preBuffer[0] = empty
 		if preBuffer[1] != empty && preBuffer[0] == empty {
 			preBuffer[0] = preBuffer[1]
 			preBuffer[1] = empty
 		}
-		postBuffer = &pI // will need to change this
+		*postBuffer = pI
 
 	default:
 		fmt.Println("D Instruction ERROR")

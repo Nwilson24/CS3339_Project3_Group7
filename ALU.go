@@ -4,7 +4,11 @@ import "fmt"
 
 func ALU(preBuffer *[2]Instruction, postBuffer *Instruction) {
 	empty := Instruction{}
+	if preBuffer[0] == empty {
+		return
+	}
 	pI := preBuffer[0]
+	preBuffer[0] = empty
 	if preBuffer[1] != empty && preBuffer[0] == empty {
 		preBuffer[0] = preBuffer[1]
 		preBuffer[1] = empty
@@ -14,22 +18,22 @@ func ALU(preBuffer *[2]Instruction, postBuffer *Instruction) {
 	case pI.opcode == 1104, pI.opcode == 1112, pI.opcode == 1360,
 		pI.opcode == 1624, pI.opcode == 1690, pI.opcode == 1691,
 		pI.opcode == 1692, pI.opcode == 1872:
-		rExecution(pI)
+		rExecution(&pI)
 	case pI.opcode >= 1160 && pI.opcode <= 1161,
 		pI.opcode >= 1672 && pI.opcode <= 1673:
-		iExecution(pI)
+		iExecution(&pI)
 	case pI.opcode >= 1684 && pI.opcode <= 1687,
 		pI.opcode >= 1940 && pI.opcode <= 1943:
-		imExecution(pI)
+		imExecution(&pI)
 	case pI.opcode == 2038:
 	default:
 		nopExecution()
 	}
 
-	postBuffer = &pI // comeback to this
+	*postBuffer = pI
 }
 
-func rExecution(pI Instruction) { // Can't directly send data to destination register, that will be done in WB
+func rExecution(pI *Instruction) { // Can't directly send data to destination register, that will be done in WB
 	rn := pI.rn
 	rm := pI.rm
 
@@ -54,7 +58,7 @@ func rExecution(pI Instruction) { // Can't directly send data to destination reg
 		fmt.Println("R Instruction ERROR")
 	}
 }
-func iExecution(pI Instruction) {
+func iExecution(pI *Instruction) {
 	rn := pI.rn
 	im := pI.im
 
@@ -67,7 +71,7 @@ func iExecution(pI Instruction) {
 		fmt.Println("I Instruction ERROR")
 	}
 }
-func imExecution(pI Instruction) {
+func imExecution(pI *Instruction) {
 
 	switch true {
 	case pI.opcode >= 1684 && pI.opcode <= 1687:

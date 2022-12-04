@@ -3,8 +3,12 @@ package main
 import "fmt"
 
 var pc = 96
+var breakFetched = false
 
 func InstructionFetch(pI []Instruction, buffer *[4]Instruction) {
+	if breakFetched {
+		return
+	}
 	//make sure instructions are moved to the top of the array
 	empty := Instruction{}
 	for i := 1; i < 4; i++ {
@@ -44,9 +48,14 @@ func InstructionFetch(pI []Instruction, buffer *[4]Instruction) {
 		}
 		return
 	}
+	//check break
+	if pI[i].opcode == 2038 {
+		breakFetched = true
+		return
+	}
 	//check for nop then add to buffer and increment pc
 	if pI[i].opcode != 0 {
-		pushBuffer(pI[pc], buffer)
+		pushBuffer(pI[(pc-96)/4], buffer)
 		pc += 4
 	}
 
@@ -82,9 +91,14 @@ func InstructionFetch(pI []Instruction, buffer *[4]Instruction) {
 		}
 		return
 	}
+	//check break
+	if pI[i].opcode == 2038 {
+		breakFetched = true
+		return
+	}
 	//check for nop then add to buffer and increment pc
 	if pI[i].opcode != 0 {
-		pushBuffer(pI[pc], buffer)
+		pushBuffer(pI[(pc-96)/4], buffer)
 		pc += 4
 	}
 }
@@ -99,7 +113,7 @@ func pushBuffer(v Instruction, buffer *[4]Instruction) {
 		}
 	}
 	//push in new instruction if there is space
-	for i := 1; i < 4; i++ {
+	for i := 0; i < 4; i++ {
 		if buffer[i] == empty {
 			buffer[i] = v
 			return

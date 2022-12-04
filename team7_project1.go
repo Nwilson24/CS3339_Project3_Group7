@@ -42,7 +42,6 @@ func main() {
 	//set up input/outputs
 	inputFile = flag.String("i", "", "get input file name")
 	outputFile = flag.String("o", "", "get output file name")
-
 	flag.Parse()
 
 	file, err := os.Open(*inputFile)
@@ -53,7 +52,6 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	var txtlines []string
-
 	for scanner.Scan() {
 		txtlines = append(txtlines, scanner.Text())
 	}
@@ -62,7 +60,6 @@ func main() {
 
 	//set up arrays for instructions and data
 	parsedInstructions, parsedData := parseInput(txtlines)
-
 	parsedInstructions = parseOpcode(parsedInstructions)
 
 	//create and fill .dis file
@@ -106,7 +103,7 @@ func main() {
 		log.Fatalf("failed to create file: %s", err)
 	}
 
-	executionDecision(parsedInstructions, &Data, outSim)
+	//executionDecision(parsedInstructions, &Data, outSim)
 
 	//begin project 3 :) totally not procrastinated
 	//set up cache and buffers
@@ -117,14 +114,41 @@ func main() {
 	postMemBuffer := Instruction{}
 	postALUBuffer := Instruction{}
 
-	for i := 0; ; {
+	//kick start the program; get something in the buffers
+	WriteBack(&postMemBuffer, &postALUBuffer)
+	MEM(&preMemBuffer, &postMemBuffer)
+	ALU(&preALUBuffer, &postALUBuffer)
+	Issue(&preIssueBuffer, &preALUBuffer, &preMemBuffer, &postMemBuffer)
+	InstructionFetch(parsedInstructions, &preIssueBuffer)
+
+	s := "--------------------\n"
+	s += "Cycle:0\n\nPre-Issue Buffer:\n"
+	s += simOut(preIssueBuffer, preMemBuffer, preALUBuffer, postMemBuffer, postALUBuffer)
+	s += "\n#########################   END OF CYCLE   #########################"
+	outSim.WriteString(s)
+
+	buffersFull := true
+	for i := 1; buffersFull; i++ {
+		//run cycle
 		WriteBack(&postMemBuffer, &postALUBuffer)
 		MEM(&preMemBuffer, &postMemBuffer)
 		ALU(&preALUBuffer, &postALUBuffer)
 		Issue(&preIssueBuffer, &preALUBuffer, &preMemBuffer, &postMemBuffer)
 		InstructionFetch(parsedInstructions, &preIssueBuffer)
+
+		//output
+		s := "--------------------\n"
+		s += fmt.Sprintf("Cycle:%v\n\nPre-Issue Buffer:\n", i)
+		s += simOut(preIssueBuffer, preMemBuffer, preALUBuffer, postMemBuffer, postALUBuffer)
+		s += "\n#########################   END OF CYCLE   #########################"
+		outSim.WriteString(s)
+
+		//check if all buffers are empty for closure
+		empty := Instruction{}
+		if preIssueBuffer == [4]Instruction{} && preMemBuffer == [2]Instruction{} && preALUBuffer == [2]Instruction{} && postMemBuffer == empty && postALUBuffer == empty {
+			buffersFull = false
+		}
 	}
-	fmt.Println(CacheToString())
 }
 
 func parseInput(txt []string) ([]Instruction, []Instruction) {
@@ -508,4 +532,133 @@ func printData(d Instruction) string {
 
 	s := fmt.Sprintf(d.rawInstruction+"\t%v\t%v \n", d.programCount, val)
 	return s
+}
+
+func simOut(preIssueBuffer [4]Instruction, preMemBuffer [2]Instruction, preALUBuffer [2]Instruction, postMemBuffer Instruction, postALUBuffer Instruction) string {
+	empty := Instruction{}
+	s := ""
+	//print preissue buffer
+	for j := 0; j < 4; j++ {
+		s += fmt.Sprintf("\tEntry %v:\t", j)
+		if preIssueBuffer[j] != empty {
+			s += fmt.Sprintf("\t[%v]\n", simPrint(preIssueBuffer[j]))
+		} else {
+			s += "\n"
+		}
+	}
+	//pre-ALU buffer
+	s += "Pre_ALU Buffer:\n"
+	s += "\tEntry 0:\t"
+	if preALUBuffer[0] != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(preALUBuffer[0]))
+	} else {
+		s += "\n"
+	}
+	s += "\tEntry 1:\t"
+	if preALUBuffer[1] != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(preALUBuffer[1]))
+	} else {
+		s += "\n"
+	}
+	//post-ALU buffer
+	s += "Post_ALU Buffer:\n"
+	s += "\tEntry 0:\t"
+	if postALUBuffer != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(postALUBuffer))
+	} else {
+		s += "\n"
+	}
+	//pre-Mem buffer
+	s += "Pre_MEM Buffer:\n"
+	s += "\tEntry 0:\t"
+	if preMemBuffer[0] != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(preMemBuffer[0]))
+	} else {
+		s += "\n"
+	}
+	s += "\tEntry 1:\t"
+	if preMemBuffer[1] != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(preMemBuffer[1]))
+	} else {
+		s += "\n"
+	}
+	//post-MEM buffer
+	s += "Post_MEM Buffer:\n"
+	s += "\tEntry 0:\t"
+	if postMemBuffer != empty {
+		s += fmt.Sprintf("\t[%v]\n", simPrint(postMemBuffer))
+	} else {
+		s += "\n"
+	}
+	//format variables
+	s += "registers:\n"
+	s += fmt.Sprintf("r00:\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v \n", Registers[0], Registers[1], Registers[2], Registers[3], Registers[4], Registers[5], Registers[6], Registers[7])
+	s += fmt.Sprintf("r08:\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v \n", Registers[8], Registers[9], Registers[10], Registers[11], Registers[12], Registers[13], Registers[14], Registers[15])
+	s += fmt.Sprintf("r16:\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v \n", Registers[16], Registers[17], Registers[18], Registers[19], Registers[20], Registers[21], Registers[22], Registers[23])
+	s += fmt.Sprintf("r24:\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v \n", Registers[24], Registers[25], Registers[26], Registers[27], Registers[28], Registers[29], Registers[30], Registers[31])
+	//format cache
+	s += "\n" + CacheToString()
+	//format data
+	s += "\ndata:"
+	for i := 0; i < len(Data.arr); i++ {
+		if i%8 == 0 {
+			s += fmt.Sprintf("\n%v:", Data.startAddress+(i*4))
+		}
+		s += fmt.Sprintf("%v\t", Data.ReadData(Data.startAddress+(i*4)))
+	}
+	return s
+}
+
+func simPrint(inst Instruction) string {
+	out := ""
+	switch true {
+	case inst.opcode >= 160 && inst.opcode <= 191:
+		if inst.programCount < 100 {
+			out += bPrint(inst)[36:]
+		} else {
+			out += bPrint(inst)[37:] //slice of previous output excluding the binary
+		}
+	case inst.opcode == 1104, inst.opcode == 1112, inst.opcode == 1360,
+		inst.opcode == 1624, inst.opcode == 1690, inst.opcode == 1691,
+		inst.opcode == 1692, inst.opcode == 1872:
+		if inst.programCount < 100 {
+			out += rPrint(inst)[39:]
+		} else {
+			out += rPrint(inst)[40:]
+		}
+	case inst.opcode >= 1160 && inst.opcode <= 1161,
+		inst.opcode >= 1672 && inst.opcode <= 1673:
+		out += iPrint(inst)[35:]
+		if inst.programCount < 100 {
+			out += iPrint(inst)[38:]
+		} else {
+			out += iPrint(inst)[39:]
+		}
+	case inst.opcode >= 1440 && inst.opcode <= 1447,
+		inst.opcode >= 1448 && inst.opcode <= 1455:
+		if inst.programCount < 100 {
+			out += cbPrint(inst)[37:]
+		} else {
+			out += cbPrint(inst)[38:]
+		}
+	case inst.opcode >= 1684 && inst.opcode <= 1687,
+		inst.opcode >= 1940 && inst.opcode <= 1943:
+		if inst.programCount < 100 {
+			out += imPrint(inst)[38:]
+		} else {
+			out += imPrint(inst)[39:]
+		}
+	case inst.opcode == 1984, inst.opcode == 1986:
+		if inst.programCount < 100 {
+			out += dPrint(inst)[39:]
+		} else {
+			out += dPrint(inst)[40:]
+		}
+	case inst.opcode == 2038:
+		out += "\tBREAK"
+	default:
+		out += "\tNOP"
+	}
+	l := len(out) - 2 //shave off new line character
+	return out[:l]
 }
