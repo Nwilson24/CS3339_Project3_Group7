@@ -5,7 +5,7 @@ var hazRegs [32]int
 func Issue(preIssue *[4]Instruction, preALU *[2]Instruction, preMem *[2]Instruction, postMem *Instruction) {
 	//take instructions, check for RAW Hazards, issue instruction to mam and alu buffers
 	empty := Instruction{}
-	//update array of unavailable registers
+	//update array of unavailable registers; anything not -1 might cause a raw hazard
 	for i := 0; i < len(hazRegs); i++ {
 		if hazRegs[i] != 0 {
 			hazRegs[i]--
@@ -18,10 +18,14 @@ func Issue(preIssue *[4]Instruction, preALU *[2]Instruction, preMem *[2]Instruct
 	var inst1 Instruction
 	var index int
 	for i := 0; i < 4; i++ {
-		if preIssue[i] != empty && hazRegs[preIssue[i].rd] == 0 {
-			inst1 = preIssue[i]
-			index = i
-			break
+		if preIssue[i] != empty && hazRegs[preIssue[i].rd] == 0 && hazRegs[preIssue[i].rn] == 0 {
+			if inst1.opcode == 1104 || inst1.opcode == 1112 || inst1.opcode == 1360 || inst1.opcode == 1624 || inst1.opcode == 1872 {
+
+			} else {
+				inst1 = preIssue[i]
+				index = i
+				break
+			}
 		}
 	}
 	//just in case no instructions can be passed on
@@ -112,4 +116,3 @@ func Issue(preIssue *[4]Instruction, preALU *[2]Instruction, preMem *[2]Instruct
 		}
 	}
 }
-

@@ -27,6 +27,8 @@ type Instruction struct {
 	shamt          int
 	im             int
 	offset         int
+	memResult      int
+	aluResult      int
 }
 
 // global data/cache despite passing in project 2 code
@@ -107,15 +109,21 @@ func main() {
 	executionDecision(parsedInstructions, &Data, outSim)
 
 	//begin project 3 :) totally not procrastinated
-	//set up cache
+	//set up cache and buffers
 	CacheSetup()
-
 	preIssueBuffer := [4]Instruction{}
 	preMemBuffer := [2]Instruction{}
 	preALUBuffer := [2]Instruction{}
 	postMemBuffer := Instruction{}
-	InstructionFetch(parsedInstructions, &preIssueBuffer)
-	Issue(&preIssueBuffer, &preALUBuffer, &preMemBuffer, &postMemBuffer)
+	postALUBuffer := Instruction{}
+
+	for i := 0; ; {
+		WriteBack(&postMemBuffer, &postALUBuffer)
+		MEM(&preMemBuffer, &postMemBuffer)
+		ALU(&preALUBuffer, &postALUBuffer)
+		Issue(&preIssueBuffer, &preALUBuffer, &preMemBuffer, &postMemBuffer)
+		InstructionFetch(parsedInstructions, &preIssueBuffer)
+	}
 	fmt.Println(CacheToString())
 }
 

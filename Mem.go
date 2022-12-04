@@ -1,8 +1,8 @@
-package CS3339_Project3_Group7
+package main
 
 import "fmt"
 
-func MEM(preBuffer *[2]Instruction, postBuffer Instruction) { // calculates address ONLY
+func MEM(preBuffer *[2]Instruction, postBuffer *Instruction) { // calculates address ONLY
 	empty := Instruction{}
 	pI := preBuffer[0]
 	var hit = false
@@ -27,7 +27,7 @@ func MEM(preBuffer *[2]Instruction, postBuffer Instruction) { // calculates addr
 			preBuffer[0] = preBuffer[1]
 			preBuffer[1] = empty
 		}
-		postBuffer = pI // will need to change this
+		postBuffer = &pI // will need to change this
 
 	default:
 		fmt.Println("D Instruction ERROR")

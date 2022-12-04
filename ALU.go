@@ -1,8 +1,8 @@
-package CS3339_Project3_Group7
+package main
 
 import "fmt"
 
-func ALU(preBuffer *[2]Instruction, postBuffer Instruction) {
+func ALU(preBuffer *[2]Instruction, postBuffer *Instruction) {
 	empty := Instruction{}
 	pI := preBuffer[0]
 	if preBuffer[1] != empty && preBuffer[0] == empty {
@@ -26,7 +26,7 @@ func ALU(preBuffer *[2]Instruction, postBuffer Instruction) {
 		nopExecution()
 	}
 
-	postBuffer = pI // comeback to this
+	postBuffer = &pI // comeback to this
 }
 
 func rExecution(pI Instruction) { // Can't directly send data to destination register, that will be done in WB
